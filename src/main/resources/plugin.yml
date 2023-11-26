@@ -1,0 +1,4 @@
+name: HardcoreRuns
+version: '${project.version}'
+main: com.panduuuh.hardcoreruns.HardcoreRuns
+api-version: '1.20'
