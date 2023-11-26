@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import static org.bukkit.World.Environment.*;
 
 public class HardcoreRuns extends JavaPlugin implements Listener {
-    private static final String DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/986074325629153330/dJH7TM1lToreBkydYrbIYUNseeYdTX6DCsAVV-EMys0ug-WLD0j7tY3_Tzgi_Ovi0JHf";
+    private static final String DISCORD_WEBHOOK_URL = "%REPLACE_ME%";
     private static final String META_DATA_FILE_NAME = "hardcore_runs_meta_data.json";
     private static final Gson GSON = new Gson();
 
