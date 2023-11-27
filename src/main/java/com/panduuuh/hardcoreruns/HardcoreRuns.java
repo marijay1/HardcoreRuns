@@ -28,8 +28,9 @@ import java.util.concurrent.TimeUnit;
 import static org.bukkit.World.Environment.*;
 
 public class HardcoreRuns extends JavaPlugin implements Listener {
-    private static final String DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/986074325629153330/dJH7TM1lToreBkydYrbIYUNseeYdTX6DCsAVV-EMys0ug-WLD0j7tY3_Tzgi_Ovi0JHf";
+    private static final String DISCORD_WEBHOOK_URL = "%REPLACE_ME%";
     private static final String META_DATA_FILE_NAME = "hardcore_runs_meta_data.json";
+    private static final String WAITING_WORLD_NAME = "unused";
     private static final Gson GSON = new Gson();
 
     private Stopwatch theStopWatch;
@@ -40,7 +41,7 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
     private Objective theHealthObjective;
 
     private HardcoreRunWorld theCurrentWorld;
-    private HardcoreRunWorld theNextWorld;
+    private Location theCurrentSpawnLocation;
 
     public HardcoreRuns() {
         theStopWatch = Stopwatch.createUnstarted();
@@ -84,7 +85,6 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         @Nullable final Integer myPlayerRunNumber = theMetaData.getPlayerRunNumber(myPlayer);
         if (myPlayerRunNumber == null || myPlayerRunNumber != theMetaData.getServerRunNumber()) {
             resetPlayer(myPlayer);
-            myPlayer.getInventory().clear();
         }
 
         myPlayer.teleport(theCurrentSpawnLocation);
@@ -94,7 +94,9 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent aPlayerDeathEvent) {
         endCurrentRun(aPlayerDeathEvent);
-        triggerNewRun(aPlayerDeathEvent.getEntity());
+
+        // wait 5 seconds til we trigger new run
+        Bukkit.getScheduler().runTaskLater(this, this::triggerNewRun, 100);
     }
 
     private void endCurrentRun(PlayerDeathEvent aPlayerDeathEvent) {
@@ -164,7 +166,7 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         }
     }
 
-    private void initializeWorlds() {
+    private void initializeCurrentWorld() {
         final String myCurrentNormalWorldName = resolveWorldName(NORMAL, theMetaData.getServerRunNumber());
         final String myCurrentNetherWorldName = resolveWorldName(NETHER, theMetaData.getServerRunNumber());
         final String myCurrentEndWorldName = resolveWorldName(THE_END, theMetaData.getServerRunNumber());
@@ -176,28 +178,15 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
             linkWorlds(myCurrentNormalWorldName, myCurrentNetherWorldName, myCurrentEndWorldName);
         }
 
-        theCurrentWorld = new HardcoreRunWorld(theWorldManager.getMVWorld(myCurrentNormalWorldName),
+        MultiverseWorld myCurrentNormalWorld = theWorldManager.getMVWorld(myCurrentNormalWorldName);
+        theCurrentWorld = new HardcoreRunWorld(myCurrentNormalWorld,
                 theWorldManager.getMVWorld(myCurrentNetherWorldName),
                 theWorldManager.getMVWorld(myCurrentEndWorldName));
 
-        final int myNextServerRunNumber = theMetaData.getServerRunNumber() + 1;
-        final String myNextNormalWorldName = resolveWorldName(NORMAL, myNextServerRunNumber);
-        final String myNextNetherWorldName = resolveWorldName(NETHER, myNextServerRunNumber);
-        final String myNextEndWorldName = resolveWorldName(THE_END, myNextServerRunNumber);
-
-        if (!theWorldManager.isMVWorld(myNextNormalWorldName)) {
-            createWorld(NORMAL, myNextServerRunNumber);
-            createWorld(NETHER, myNextServerRunNumber);
-            createWorld(THE_END, myNextServerRunNumber);
-            linkWorlds(myNextNormalWorldName, myNextNetherWorldName, myNextEndWorldName);
-        }
-
-        theNextWorld = new HardcoreRunWorld(theWorldManager.getMVWorld(myNextNormalWorldName),
-                theWorldManager.getMVWorld(myNextNetherWorldName),
-                theWorldManager.getMVWorld(myNextEndWorldName));
+        theCurrentSpawnLocation = myCurrentNormalWorld.getCBWorld().getSpawnLocation();
     }
 
-    private void updateWorlds() {
+    private void advanceToNextWorld() {
         theWorldManager.deleteWorld(theCurrentWorld.normalWorld().getName(), true, true);
         theWorldManager.deleteWorld(theCurrentWorld.netherWorld().getName(), true, true);
         theWorldManager.deleteWorld(theCurrentWorld.endWorld().getName(), true, true);
@@ -206,11 +195,8 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
 
     private void createWorld(Environment anEnvironment, int aRunNumber) {
         String myWorldName = resolveWorldName(anEnvironment, aRunNumber);
-        theWorldManager.addWorld(myWorldName, anEnvironment,null, WorldType.NORMAL,true, null);
+        theWorldManager.addWorld(myWorldName, anEnvironment, null, WorldType.NORMAL,true, null);
         theWorldManager.getMVWorld(myWorldName).setAdjustSpawn(true);
-        if (anEnvironment == NORMAL) {
-            preGenerateWorld(myWorldName);
-        }
     }
 
     private String resolveWorldName(Environment anEnvironment, int aRunNumber) {
@@ -246,6 +232,7 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         aPlayer.setExp(0);
         aPlayer.setLevel(0);
         aPlayer.getActivePotionEffects().clear();
+        aPlayer.getInventory().clear();
         aPlayer.setGameMode(GameMode.SURVIVAL);
     }
 
