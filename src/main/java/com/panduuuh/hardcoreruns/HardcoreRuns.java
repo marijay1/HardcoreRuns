@@ -17,7 +17,6 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.*;
 import org.jetbrains.annotations.Nullable;
-import org.popcraft.chunky.api.ChunkyAPI;
 
 import java.io.File;
 import java.io.FileReader;
@@ -29,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import static org.bukkit.World.Environment.*;
 
 public class HardcoreRuns extends JavaPlugin implements Listener {
-    private static final String DISCORD_WEBHOOK_URL = "%REPLACE_ME%";
+    private static final String DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/986074325629153330/dJH7TM1lToreBkydYrbIYUNseeYdTX6DCsAVV-EMys0ug-WLD0j7tY3_Tzgi_Ovi0JHf";
     private static final String META_DATA_FILE_NAME = "hardcore_runs_meta_data.json";
     private static final Gson GSON = new Gson();
 
@@ -38,6 +37,7 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
     private final MultiverseNetherPortals theNetherPortals;
     private final MVWorldManager theWorldManager;
     private final HardcoreRunsMetaData theMetaData;
+    private Objective theHealthObjective;
 
     private HardcoreRunWorld theCurrentWorld;
     private HardcoreRunWorld theNextWorld;
@@ -58,8 +58,14 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        initializeWorlds();
-        createScoreboard();
+        initializeCurrentWorld();
+
+        MultiverseWorld myWorld = theWorldManager.getMVWorld(WAITING_WORLD_NAME);
+        myWorld.setPVPMode(false);
+        myWorld.setGameMode(GameMode.ADVENTURE);
+        myWorld.setSpawnLocation(new Location(myWorld.getCBWorld(), -48, 74, 62));
+
+        theHealthObjective = createScoreboard();
         theStopWatch.start();
     }
 
@@ -76,12 +82,12 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
     public void onPlayerJoin(PlayerJoinEvent aPlayerJoinEvent) {
         final Player myPlayer = aPlayerJoinEvent.getPlayer();
         @Nullable final Integer myPlayerRunNumber = theMetaData.getPlayerRunNumber(myPlayer);
-        if (myPlayerRunNumber != null && myPlayerRunNumber != theMetaData.getServerRunNumber()) {
+        if (myPlayerRunNumber == null || myPlayerRunNumber != theMetaData.getServerRunNumber()) {
             resetPlayer(myPlayer);
             myPlayer.getInventory().clear();
         }
 
-        myPlayer.teleport(theWorldManager.getMVWorld(theCurrentWorld.normalWorld().getCBWorld()).getSpawnLocation());
+        myPlayer.teleport(theCurrentSpawnLocation);
         theMetaData.recordPlayer(myPlayer);
     }
 
@@ -93,9 +99,11 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
 
     private void endCurrentRun(PlayerDeathEvent aPlayerDeathEvent) {
         theStopWatch.stop();
+        theCurrentSpawnLocation = theWorldManager.getMVWorld(WAITING_WORLD_NAME).getCBWorld().getSpawnLocation();
 
         final String myElapsedRunTime = formatElapsedRunTime();
         for (Player myOnlinePlayer : Bukkit.getOnlinePlayers()) {
+            myOnlinePlayer.teleport(theCurrentSpawnLocation);
             myOnlinePlayer.sendTitle("This run has ended after: " + myElapsedRunTime, aPlayerDeathEvent.getDeathMessage(), 5, 20, 5);
         }
 
@@ -103,19 +111,26 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         sendDiscordMessage(aPlayerDeathEvent);
     }
 
-    private void triggerNewRun(Player aDeadPlayer) {
-        resetPlayersToNewWorld(aDeadPlayer);
+    private void triggerNewRun() {
+        theMetaData.incrementServerRunNumber();
+        Bukkit.broadcastMessage(String.format("Creating new worlds for Run #%d...", theMetaData.getServerRunNumber()));
+        advanceToNextWorld();
+
+        for (Player myPlayer : Bukkit.getOnlinePlayers()) {
+            myPlayer.teleport(theCurrentSpawnLocation);
+            resetPlayer(myPlayer);
+            theMetaData.recordPlayer(myPlayer);
+        }
+
+        theHealthObjective.setDisplayName(String.format("Run #%d", theMetaData.getServerRunNumber()));
         theStopWatch.reset();
         theStopWatch.start();
     }
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent aPlayerRespawnEvent) {
-        Player myPlayer = aPlayerRespawnEvent.getPlayer();
-
-        World myWorld = theCurrentWorld.normalWorld().getCBWorld();
-        aPlayerRespawnEvent.setRespawnLocation(myWorld.getSpawnLocation());
-        resetPlayer(myPlayer);
+        aPlayerRespawnEvent.setRespawnLocation(theCurrentSpawnLocation);
+        resetPlayer(aPlayerRespawnEvent.getPlayer());
     }
 
     private HardcoreRunsMetaData loadMetaData() throws IOException {
@@ -186,21 +201,7 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         theWorldManager.deleteWorld(theCurrentWorld.normalWorld().getName(), true, true);
         theWorldManager.deleteWorld(theCurrentWorld.netherWorld().getName(), true, true);
         theWorldManager.deleteWorld(theCurrentWorld.endWorld().getName(), true, true);
-        theCurrentWorld = theNextWorld;
-
-        final int myNextServerRunNumber = theMetaData.getServerRunNumber() + 1;
-        final String myNextNormalWorldName = resolveWorldName(NORMAL, myNextServerRunNumber);
-        final String myNextNetherWorldName = resolveWorldName(NETHER, myNextServerRunNumber);
-        final String myNextEndWorldName = resolveWorldName(THE_END, myNextServerRunNumber);
-
-        createWorld(NORMAL, myNextServerRunNumber);
-        createWorld(NETHER, myNextServerRunNumber);
-        createWorld(THE_END, myNextServerRunNumber);
-        linkWorlds(myNextNormalWorldName, myNextNetherWorldName, myNextEndWorldName);
-
-        theNextWorld = new HardcoreRunWorld(theWorldManager.getMVWorld(myNextNormalWorldName),
-                theWorldManager.getMVWorld(myNextNetherWorldName),
-                theWorldManager.getMVWorld(myNextEndWorldName));
+        initializeCurrentWorld();
     }
 
     private void createWorld(Environment anEnvironment, int aRunNumber) {
@@ -224,7 +225,7 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         theNetherPortals.addWorldLink(anEndWorld, anOverWorld, PortalType.ENDER);
     }
 
-    private void createScoreboard() {
+    private Objective createScoreboard() {
         ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
         Objective healthObjective = scoreboard.getObjective("health");
@@ -235,20 +236,8 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
 
         healthObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
         healthObjective.setDisplayName(String.format("Run #%d", theMetaData.getServerRunNumber()));
-    }
 
-    private void resetPlayersToNewWorld(Player aDeadPlayer) {
-        theMetaData.incrementServerRunNumber();
-        updateWorlds();
-
-        for (Player myPlayer : Bukkit.getOnlinePlayers()) {
-            if (myPlayer != aDeadPlayer) {
-                final World myWorld = theCurrentWorld.normalWorld().getCBWorld();
-                myPlayer.teleport(myWorld.getSpawnLocation());
-                resetPlayer(myPlayer);
-            }
-            theMetaData.recordPlayer(myPlayer);
-        }
+        return healthObjective;
     }
 
     private void resetPlayer(Player aPlayer) {
@@ -258,13 +247,6 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         aPlayer.setLevel(0);
         aPlayer.getActivePotionEffects().clear();
         aPlayer.setGameMode(GameMode.SURVIVAL);
-    }
-
-    private void preGenerateWorld(String aWorldName) {
-        ChunkyAPI myChunkyAPI = Bukkit.getServer().getServicesManager().load(ChunkyAPI.class);
-        if (myChunkyAPI != null) {
-            myChunkyAPI.startTask(aWorldName, "square", 0, 0, 500, 500, "concentric");
-        }
     }
 
     private void sendDiscordMessage(PlayerDeathEvent aDeathEvent) {
