@@ -13,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.*;
@@ -62,12 +63,18 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         initializeCurrentWorld();
 
         MultiverseWorld myWorld = theWorldManager.getMVWorld(WAITING_WORLD_NAME);
-        myWorld.setPVPMode(false);
-        myWorld.setGameMode(GameMode.ADVENTURE);
-        myWorld.setSpawnLocation(new Location(myWorld.getCBWorld(), -48, 74, 62));
+        myWorld.setAdjustSpawn(true);
 
         theHealthObjective = createScoreboard();
+        updateScoreboardTime();
         theStopWatch.start();
+
+    }
+
+    private void updateScoreboardTime() {
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            theHealthObjective.setDisplayName(String.format("Run #%d : %s", theMetaData.getServerRunNumber(), formatElapsedRunTime()));
+        }, 0, 20);
     }
 
     @Override
@@ -85,15 +92,25 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         @Nullable final Integer myPlayerRunNumber = theMetaData.getPlayerRunNumber(myPlayer);
         if (myPlayerRunNumber == null || myPlayerRunNumber != theMetaData.getServerRunNumber()) {
             resetPlayer(myPlayer);
+            Location myCurrentSpawnLocation = new Location(theCurrentWorld.normalWorld().getCBWorld(),
+                    theCurrentSpawnLocation.getX(),
+                    theCurrentSpawnLocation.getY(),
+                    theCurrentSpawnLocation.getZ());
+            myPlayer.teleport(myCurrentSpawnLocation);
+            getLogger().info(myCurrentSpawnLocation + " " + myPlayer);
         }
-
-        myPlayer.teleport(theCurrentSpawnLocation);
         theMetaData.recordPlayer(myPlayer);
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent aPlayerQuitEvent) {
+        theHealthObjective.getScoreboard().getPlayers().remove(aPlayerQuitEvent.getPlayer());
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent aPlayerDeathEvent) {
         endCurrentRun(aPlayerDeathEvent);
+        Bukkit.broadcastMessage(String.format("Creating worlds for new Run #%d...", theMetaData.getServerRunNumber() + 1));
 
         // wait 5 seconds til we trigger new run
         Bukkit.getScheduler().runTaskLater(this, this::triggerNewRun, 100);
@@ -111,11 +128,16 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
 
         aPlayerDeathEvent.getDrops().clear();
         sendDiscordMessage(aPlayerDeathEvent);
+
+        try {
+            saveMetaData();
+        } catch (IOException aException) {
+            throw new RuntimeException(aException);
+        }
     }
 
     private void triggerNewRun() {
         theMetaData.incrementServerRunNumber();
-        Bukkit.broadcastMessage(String.format("Creating new worlds for Run #%d...", theMetaData.getServerRunNumber()));
         advanceToNextWorld();
 
         for (Player myPlayer : Bukkit.getOnlinePlayers()) {
@@ -124,7 +146,6 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
             theMetaData.recordPlayer(myPlayer);
         }
 
-        theHealthObjective.setDisplayName(String.format("Run #%d", theMetaData.getServerRunNumber()));
         theStopWatch.reset();
         theStopWatch.start();
     }
@@ -220,8 +241,9 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
             healthObjective = scoreboard.registerNewObjective("health","health", Criterias.HEALTH);
         }
 
-        healthObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        healthObjective.setDisplaySlot(DisplaySlot.SIDEBAR_LIGHT_PURPLE);
         healthObjective.setDisplayName(String.format("Run #%d", theMetaData.getServerRunNumber()));
+        healthObjective.setRenderType(RenderType.HEARTS);
 
         return healthObjective;
     }
@@ -243,7 +265,7 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
         myDiscordWebhook.addEmbed(new DiscordWebhook.EmbedObject()
                 .setAuthor("Stupidest Idiot Award goes to...", null, null)
                 .setTitle(aDeathEvent.getEntity().getName())
-                .addField(aDeathEvent.getDeathMessage(), String.format("They ruined run #%d after %d minute(s) and %d second(s)", theMetaData.getServerRunNumber(), theStopWatch.elapsed(TimeUnit.MINUTES), theStopWatch.elapsed(TimeUnit.SECONDS)), false)
+                .addField(aDeathEvent.getDeathMessage(), String.format("They ruined run #%d after %s", theMetaData.getServerRunNumber(), formatElapsedRunTime()), false)
                 .setImage("https://i.imgur.com/SNlTTOQ.jpeg")
                 .setThumbnail("https://i.imgur.com/qHS1Luk.png")
                 .setFooter("Look at this stupid fucking muppet", null)
@@ -257,14 +279,8 @@ public class HardcoreRuns extends JavaPlugin implements Listener {
 
     private String formatElapsedRunTime() {
         long mySeconds = theStopWatch.elapsed(TimeUnit.SECONDS);
-        long myMinutes = theStopWatch.elapsed(TimeUnit.MINUTES);
-        long myHours = theStopWatch.elapsed(TimeUnit.HOURS);
 
-        if (myHours > 0) {
-            return String.format("%d:%02d:%02d", myHours, myMinutes % 60, mySeconds % 60);
-        } else {
-            return String.format("%02d:%02d", myMinutes, mySeconds % 60);
-        }
+        return String.format("%d:%02d:%02d", mySeconds / 3600, (mySeconds % 3600) / 60, (mySeconds % 60));
     }
 
     private record HardcoreRunWorld(MultiverseWorld normalWorld, MultiverseWorld netherWorld, MultiverseWorld endWorld) {}
