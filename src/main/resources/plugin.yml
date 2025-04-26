@@ -1,0 +1,4 @@
+name: HardcoreRuns
+version: '1.0-SNAPSHOT'
+main: com.panduuuh.hardcoreRuns.HardcoreRuns
+api-version: '1.21'
