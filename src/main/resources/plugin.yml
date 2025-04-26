@@ -2,3 +2,7 @@ name: HardcoreRuns
 version: '1.0-SNAPSHOT'
 main: com.panduuuh.hardcoreRuns.HardcoreRuns
 api-version: '1.21'
+commands:
+  reset:
+    description: Reset the game world
+    usage: /reset
