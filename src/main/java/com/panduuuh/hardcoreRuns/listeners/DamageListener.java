@@ -1,6 +1,7 @@
 package com.panduuuh.hardcoreRuns.listeners;
 
 import com.panduuuh.hardcoreRuns.core.PlayerManager;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -9,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 
 public class DamageListener implements Listener {
+    private static final double HEARTS_PER_DAMAGE = 2.0; // 1 heart = 2 damage points
     private final PlayerManager playerManager;
 
     public DamageListener(PlayerManager playerManager) {
@@ -22,15 +24,18 @@ public class DamageListener implements Listener {
 
         Player victim = (Player) event.getEntity();
         double damage = event.getFinalDamage();
+        double heartsLost = damage / HEARTS_PER_DAMAGE;
 
         playerManager.handleDamage(victim, damage);
-        broadcastDamageMessage(victim, damage);
+        broadcastHeartsLost(victim, heartsLost);
     }
 
-    private void broadcastDamageMessage(Player victim, double damage) {
+    private void broadcastHeartsLost(Player victim, double hearts) {
+        String heartsFormatted = String.format("%.1f", hearts);
         String message = ChatColor.WHITE + victim.getName() + " has taken " +
-                ChatColor.RED + String.format("%.1f", damage / 2) + " ♥ " +
-                ChatColor.RESET + "damage.";
+                ChatColor.RED + " ❤ " + heartsFormatted +
+                ChatColor.WHITE + " hearts";
+
         victim.getServer().broadcastMessage(message);
     }
 }
