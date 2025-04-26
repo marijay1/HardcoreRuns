@@ -97,8 +97,17 @@ public class DiscordService {
     }
 
     private String formatTime(long milliseconds) {
-        long seconds = (milliseconds / 1000) % 60;
-        long minutes = (milliseconds / (1000 * 60)) % 60;
-        return String.format("%02d:%02d", minutes, seconds);
+        long totalSeconds = milliseconds / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return String.format("%d hours %d minutes", hours, minutes);
+        } else if (minutes > 0) {
+            return String.format("%d minutes %d seconds", minutes, seconds);
+        } else {
+            return String.format("%d seconds", seconds);
+        }
     }
 }
