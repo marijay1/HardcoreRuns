@@ -3,9 +3,7 @@ package com.panduuuh.hardcoreRuns.core;
 import com.panduuuh.hardcoreRuns.HardcoreRuns;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -33,12 +31,22 @@ public class PlayerManager {
     }
 
     private void propagateDamage(Player source, double damage) {
-        Bukkit.getOnlinePlayers().parallelStream()
+        Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p != source)
-                .forEach(p -> applySyncedDamage(p, damage));
+                .forEach(p -> {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        applySyncedDamage(p, damage);
+                    });
+                });
     }
 
     private void applySyncedDamage(Player target, double damage) {
+        if (processingDamage.contains(target.getUniqueId())) return;
+        if (!Bukkit.isPrimaryThread()) {
+            plugin.getLogger().warning("Attempted async damage application!");
+            return;
+        }
+
         processingDamage.add(target.getUniqueId());
         target.damage(damage);
         processingDamage.remove(target.getUniqueId());
@@ -133,8 +141,8 @@ public class PlayerManager {
                 player.removePotionEffect(e.getType()));
     }
 
-    public void resetAllPlayers() {
-        Bukkit.getOnlinePlayers().forEach(this::fullReset);
+    public boolean isProcessingDamage(UUID playerId) {
+        return processingDamage.contains(playerId);
     }
 
     private void clearNegativeEffects(Player player) {

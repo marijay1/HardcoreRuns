@@ -4,7 +4,6 @@ import com.panduuuh.hardcoreRuns.HardcoreRuns;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Random;
 
@@ -25,7 +24,6 @@ public class WorldManager {
     public void initializeWorlds() {
         Bukkit.getWorlds().forEach(world -> {
             world.setDifficulty(Difficulty.HARD);
-            world.setGameRule(GameRule.NATURAL_REGENERATION, false);
             world.setHardcore(true);
         });
         runStartTime = System.currentTimeMillis();
