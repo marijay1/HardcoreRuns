@@ -57,24 +57,6 @@ public class WorldManager {
         return wc.createWorld();
     }
 
-    private void prepareSafeSpawn(World world) {
-        Location spawn = world.getSpawnLocation();
-        int y = world.getHighestBlockYAt(spawn);
-
-        if (y <= world.getMinHeight()) {
-            createSafetyPlatform(world, spawn);
-        }
-
-        world.setSpawnLocation(spawn.getBlockX(), y + 1, spawn.getBlockZ());
-    }
-
-    private void createSafetyPlatform(World world, Location loc) {
-        loc.getBlock().setType(Material.STONE);
-        loc.clone().add(1, 0, 0).getBlock().setType(Material.STONE);
-        loc.clone().add(0, 0, 1).getBlock().setType(Material.STONE);
-        loc.clone().add(1, 0, 1).getBlock().setType(Material.STONE);
-    }
-
     private void teleportPlayers(World newWorld) {
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
             Location spawn = newWorld.getSpawnLocation();
