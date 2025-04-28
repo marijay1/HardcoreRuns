@@ -13,15 +13,17 @@ public class WorldManager {
     private final WorldCleanupService cleanupService;
     private final PlayerManager playerManager;
     private final TaskScheduler scheduler;
+    private final BossBarManager bossBar;
     private long runStartTime;
     private boolean resetPending = false;
 
-    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager, TaskScheduler scheduler) {
+    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager, TaskScheduler scheduler, BossBarManager bossBar) {
         this.plugin = plugin;
         this.config = config;
         this.cleanupService = new WorldCleanupService();
         this.playerManager = playerManager;
         this.scheduler = scheduler;
+        this.bossBar = bossBar;
     }
 
     public void initializeWorlds() {
@@ -44,7 +46,7 @@ public class WorldManager {
         scheduler.runTask(() -> {
             teleportPlayers(newWorld);
             cleanupService.cleanupOldRuns();
-            resetRunTimer();
+            bossBar.startTimer();
         });
     }
 
@@ -83,10 +85,6 @@ public class WorldManager {
 
     public long getRunStartTime() {
         return runStartTime;
-    }
-
-    private void resetRunTimer() {
-        runStartTime = System.currentTimeMillis();
     }
 
     public boolean isResetPending() {

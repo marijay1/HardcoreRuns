@@ -27,15 +27,15 @@ public class PluginManager {
         this.scheduler = new BukkitTaskScheduler(plugin);
         this.logger = new BukkitLogger(plugin);
         this.player = new PlayerManager(plugin, scheduler, logger);
-        this.world = new WorldManager(plugin, config, player, scheduler);
-        this.discord = new DiscordService(config, scheduler, logger);
         this.bossBar = new BossBarManager(scheduler, config);
+        this.world = new WorldManager(plugin, config, player, scheduler, bossBar);
+        this.discord = new DiscordService(config, scheduler, logger);
         this.resetCommand = new ResetCommand(world, player);
         this.notificationService = new NotificationService();
 
         this.listeners = Arrays.asList(
                 new DamageListener(player),
-                new DeathListener(player, world, discord, notificationService),
+                new DeathListener(player, world, discord, notificationService, bossBar),
                 new JoinListener(player, bossBar),
                 new FoodListener(player),
                 new ExperienceListener(player)
@@ -61,7 +61,7 @@ public class PluginManager {
 
     public void shutdown() {
         config.save();
-        bossBar.cleanup();
+        bossBar.stopTimer();
         world.cleanupOldRuns();
     }
 }

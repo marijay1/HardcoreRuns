@@ -13,15 +13,16 @@ public class BossBarManager {
     private BossBar bossBar;
     private BukkitTask updateTask;
     private long startTime;
+    private boolean timerRunning;
 
     public BossBarManager(BukkitTaskScheduler scheduler, ConfigurationManager config) {
         this.scheduler = scheduler;
         this.config = config;
+        this.timerRunning = false;
     }
 
     public void initialize() {
         createBossBar();
-        startUpdateTask();
     }
 
     private void createBossBar() {
@@ -32,11 +33,28 @@ public class BossBarManager {
         );
         bossBar.setVisible(true);
         Bukkit.getOnlinePlayers().forEach(bossBar::addPlayer);
+    }
+
+    public void startTimer() {
+        if (timerRunning) return;
+
         startTime = System.currentTimeMillis();
+        timerRunning = true;
+        startUpdateTask();
+    }
+
+    public void stopTimer() {
+        if (updateTask != null) {
+            updateTask.cancel();
+            updateTask = null;
+        }
+        timerRunning = false;
     }
 
     private void startUpdateTask() {
         updateTask = scheduler.runTaskTimer(() -> {
+            if (!timerRunning) return;
+
             String time = formatTime(System.currentTimeMillis() - startTime);
             bossBar.setTitle(String.format("Attempt: %d | Time: %s",
                     config.getAttempts(), time));
@@ -45,15 +63,6 @@ public class BossBarManager {
 
     public void addPlayer(Player player) {
         bossBar.addPlayer(player);
-    }
-
-    public void cleanup() {
-        if (updateTask != null) {
-            updateTask.cancel();
-        }
-        if (bossBar != null) {
-            bossBar.removeAll();
-        }
     }
 
     private String formatTime(long milliseconds) {

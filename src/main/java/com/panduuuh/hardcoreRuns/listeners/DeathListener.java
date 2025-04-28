@@ -1,9 +1,6 @@
 package com.panduuuh.hardcoreRuns.listeners;
 
-import com.panduuuh.hardcoreRuns.core.DiscordService;
-import com.panduuuh.hardcoreRuns.core.NotificationService;
-import com.panduuuh.hardcoreRuns.core.PlayerManager;
-import com.panduuuh.hardcoreRuns.core.WorldManager;
+import com.panduuuh.hardcoreRuns.core.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,13 +13,15 @@ public class DeathListener implements Listener {
     private final WorldManager worldManager;
     private final DiscordService discordService;
     private final NotificationService notifications;
+    private final BossBarManager bossBar;
 
     public DeathListener(PlayerManager playerManager, WorldManager worldManager,
-                         DiscordService discordService, NotificationService notifications) {
+                         DiscordService discordService, NotificationService notifications, BossBarManager bossBar) {
         this.playerManager = playerManager;
         this.worldManager = worldManager;
         this.discordService = discordService;
         this.notifications = notifications;
+        this.bossBar = bossBar;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -54,12 +53,17 @@ public class DeathListener implements Listener {
     }
 
     private void checkAllPlayersDead(Player player, long timeAlive, String deathMessage) {
+        if (!worldManager.isResetPending()) {
+            return;
+        }
+
         boolean allDead = Bukkit.getOnlinePlayers().stream()
                 .allMatch(p -> p.isDead() || !p.isOnline());
 
         if (allDead) {
             discordService.sendDeathAlert(player, timeAlive, deathMessage);
             Bukkit.getOnlinePlayers().forEach(notifications::promptWorldReset);
+            bossBar.stopTimer();
             worldManager.setResetPending(false);
         }
     }
