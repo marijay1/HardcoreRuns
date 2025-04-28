@@ -3,8 +3,6 @@ package com.panduuuh.hardcoreRuns.core;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -12,28 +10,27 @@ import java.net.URL;
 
 public class DiscordService {
     private final ConfigurationManager config;
-    private final Plugin plugin;
+    private final TaskScheduler scheduler;
+    private final Logger logger;
 
-    public DiscordService(ConfigurationManager config, Plugin plugin) {
+    public DiscordService(ConfigurationManager config, TaskScheduler scheduler, Logger logger) {
         this.config = config;
-        this.plugin = plugin;
+        this.scheduler = scheduler;
+        this.logger = logger;
     }
 
     public void sendDeathAlert(Player player, long timeAlive, String deathMessage) {
         String webhookUrl = config.getWebhookUrl();
         if (webhookUrl.isEmpty()) return;
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    JsonObject payload = createPayload(player, timeAlive, deathMessage);
-                    sendWebhookRequest(webhookUrl, payload);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("Discord alert failed: " + e.getMessage());
-                }
+        scheduler.runTaskAsync(() -> {
+            try {
+                JsonObject payload = createPayload(player, timeAlive, deathMessage);
+                sendWebhookRequest(webhookUrl, payload);
+            } catch (Exception e) {
+                logger.warning("Discord alert failed: " + e.getMessage());
             }
-        }.runTaskAsynchronously(plugin);
+        });
     }
 
     private JsonObject createPayload(Player player, long timeAlive, String deathMessage) {
@@ -89,10 +86,10 @@ public class DiscordService {
             }
 
             if (conn.getResponseCode() >= 400) {
-                plugin.getLogger().warning("Discord webhook failed: " + conn.getResponseMessage());
+                logger.warning("Discord webhook failed: " + conn.getResponseMessage());
             }
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to send Discord alert: " + e.getMessage());
+            logger.severe("Failed to send Discord alert: " + e.getMessage());
         }
     }
 

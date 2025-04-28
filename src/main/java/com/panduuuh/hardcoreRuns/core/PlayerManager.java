@@ -12,13 +12,15 @@ import java.util.*;
 
 public class PlayerManager {
     private final Set<UUID> processingDamage = new HashSet<>();
-    private final ConfigurationManager config;
     private final HardcoreRuns plugin;
+    private final BukkitTaskScheduler scheduler;
+    private final BukkitLogger logger;
     private final TotemService totemService;
 
-    public PlayerManager(HardcoreRuns plugin, ConfigurationManager config) {
+    public PlayerManager(HardcoreRuns plugin, BukkitTaskScheduler scheduler, BukkitLogger logger) {
         this.plugin = plugin;
-        this.config = config;
+        this.scheduler = scheduler;
+        this.logger = logger;
         this.totemService = new TotemService();
     }
 
@@ -34,7 +36,7 @@ public class PlayerManager {
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p != source)
                 .forEach(p -> {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
+                    scheduler.runTask(() -> {
                         applySyncedDamage(p, damage);
                     });
                 });
@@ -43,7 +45,7 @@ public class PlayerManager {
     private void applySyncedDamage(Player target, double damage) {
         if (processingDamage.contains(target.getUniqueId())) return;
         if (!Bukkit.isPrimaryThread()) {
-            plugin.getLogger().warning("Attempted async damage application!");
+            logger.warning("Attempted async damage application!");
             return;
         }
 
@@ -148,5 +150,9 @@ public class PlayerManager {
     private void clearNegativeEffects(Player player) {
         player.getActivePotionEffects()
                 .forEach(e -> player.removePotionEffect(e.getType()));
+    }
+
+    public HardcoreRuns getPlugin() {
+        return plugin;
     }
 }

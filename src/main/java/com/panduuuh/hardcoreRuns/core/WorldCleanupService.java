@@ -1,6 +1,5 @@
 package com.panduuuh.hardcoreRuns.core;
 
-import com.panduuuh.hardcoreRuns.HardcoreRuns;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -10,11 +9,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class WorldCleanupService {
-    private final HardcoreRuns plugin;
-
-    public WorldCleanupService(HardcoreRuns plugin) {
-        this.plugin = plugin;
-    }
 
     // Renamed and modified cleanup method
     public void cleanupOldRuns() {

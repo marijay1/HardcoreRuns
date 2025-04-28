@@ -18,10 +18,8 @@ public class DamageListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerDamage(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player victim)) return;
         if (event.isCancelled()) return;
-
-        Player victim = (Player) event.getEntity();
 
         // Skip if this damage is from sync
         if (playerManager.isProcessingDamage(victim.getUniqueId())) {

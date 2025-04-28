@@ -12,13 +12,16 @@ public class WorldManager {
     private final ConfigurationManager config;
     private final WorldCleanupService cleanupService;
     private final PlayerManager playerManager;
+    private final TaskScheduler scheduler;
     private long runStartTime;
+    private boolean resetPending = false;
 
-    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager) {
+    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager, TaskScheduler scheduler) {
         this.plugin = plugin;
         this.config = config;
-        this.cleanupService = new WorldCleanupService(plugin);
+        this.cleanupService = new WorldCleanupService();
         this.playerManager = playerManager;
+        this.scheduler = scheduler;
     }
 
     public void initializeWorlds() {
@@ -38,7 +41,7 @@ public class WorldManager {
         World newWorld = createNewWorld();
 
         // Handle async-safe operations
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        scheduler.runTask(() -> {
             teleportPlayers(newWorld);
             cleanupService.cleanupOldRuns();
             resetRunTimer();
@@ -58,7 +61,7 @@ public class WorldManager {
     }
 
     private void teleportPlayers(World newWorld) {
-        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+        scheduler.runTaskLater(() -> {
             Location spawn = newWorld.getSpawnLocation();
             spawn.getChunk().load();
 
@@ -68,7 +71,7 @@ public class WorldManager {
 
                 // Metadata handling
                 player.setMetadata("teleporting", new FixedMetadataValue(plugin, true));
-                Bukkit.getScheduler().runTaskLater(plugin, () ->
+                scheduler.runTaskLater(() ->
                         player.removeMetadata("teleporting", plugin), 20L);
             });
         }, 20L);
@@ -84,5 +87,13 @@ public class WorldManager {
 
     private void resetRunTimer() {
         runStartTime = System.currentTimeMillis();
+    }
+
+    public boolean isResetPending() {
+        return resetPending;
+    }
+
+    public void setResetPending(boolean resetPending) {
+        this.resetPending = resetPending;
     }
 }

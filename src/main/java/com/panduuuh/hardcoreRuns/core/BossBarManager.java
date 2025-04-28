@@ -5,18 +5,17 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public class BossBarManager {
-    private final Plugin plugin;
+    private final BukkitTaskScheduler scheduler;
     private final ConfigurationManager config;
     private BossBar bossBar;
     private BukkitTask updateTask;
     private long startTime;
 
-    public BossBarManager(Plugin plugin, ConfigurationManager config) {
-        this.plugin = plugin;
+    public BossBarManager(BukkitTaskScheduler scheduler, ConfigurationManager config) {
+        this.scheduler = scheduler;
         this.config = config;
     }
 
@@ -37,7 +36,7 @@ public class BossBarManager {
     }
 
     private void startUpdateTask() {
-        updateTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        updateTask = scheduler.runTaskTimer(() -> {
             String time = formatTime(System.currentTimeMillis() - startTime);
             bossBar.setTitle(String.format("Attempt: %d | Time: %s",
                     config.getAttempts(), time));
@@ -46,11 +45,6 @@ public class BossBarManager {
 
     public void addPlayer(Player player) {
         bossBar.addPlayer(player);
-    }
-
-    public void updateAttemptCounter() {
-        bossBar.setTitle(String.format("Attempt: %d | Time: 00:00", config.getAttempts()));
-        startTime = System.currentTimeMillis();
     }
 
     public void cleanup() {
