@@ -11,8 +11,8 @@ import java.util.List;
 public class PluginManager {
     private final HardcoreRuns plugin;
     private final ConfigurationManager config;
-    private final BukkitTaskScheduler scheduler;
-    private final BukkitLogger logger;
+    private final TaskScheduler scheduler;
+    private final Logger logger;
     private final WorldManager world;
     private final PlayerManager player;
     private final DiscordService discord;
@@ -28,9 +28,9 @@ public class PluginManager {
         this.logger = new BukkitLogger(plugin);
         this.player = new PlayerManager(plugin, scheduler, logger);
         this.bossBar = new BossBarManager(scheduler, config);
-        this.world = new WorldManager(plugin, config, player, scheduler, bossBar);
+        this.world = new WorldManager(plugin, config, player, scheduler, bossBar, logger);
         this.discord = new DiscordService(config, scheduler, logger);
-        this.resetCommand = new ResetCommand(world, player);
+        this.resetCommand = new ResetCommand(world, bossBar);
         this.notificationService = new NotificationService();
 
         this.listeners = Arrays.asList(
@@ -56,7 +56,7 @@ public class PluginManager {
     }
 
     private void registerCommands() {
-        plugin.getCommand("reset").setExecutor(resetCommand); // Direct command registration
+        plugin.getCommand("reset").setExecutor(resetCommand);
     }
 
     public void shutdown() {

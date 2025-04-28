@@ -8,14 +8,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 public class BossBarManager {
-    private final BukkitTaskScheduler scheduler;
+    private final TaskScheduler scheduler;
     private final ConfigurationManager config;
     private BossBar bossBar;
     private BukkitTask updateTask;
     private long startTime;
     private boolean timerRunning;
 
-    public BossBarManager(BukkitTaskScheduler scheduler, ConfigurationManager config) {
+    public BossBarManager(TaskScheduler scheduler, ConfigurationManager config) {
         this.scheduler = scheduler;
         this.config = config;
         this.timerRunning = false;
@@ -23,6 +23,7 @@ public class BossBarManager {
 
     public void initialize() {
         createBossBar();
+        startTimer();
     }
 
     private void createBossBar() {
@@ -76,5 +77,9 @@ public class BossBarManager {
         } else {
             return String.format("%02d:%02d", minutes, seconds);
         }
+    }
+
+    public boolean isTimerRunning() {
+        return timerRunning;
     }
 }

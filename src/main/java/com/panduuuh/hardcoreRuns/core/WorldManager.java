@@ -14,16 +14,18 @@ public class WorldManager {
     private final PlayerManager playerManager;
     private final TaskScheduler scheduler;
     private final BossBarManager bossBar;
+    private final Logger logger;
     private long runStartTime;
     private boolean resetPending = false;
 
-    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager, TaskScheduler scheduler, BossBarManager bossBar) {
+    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager, TaskScheduler scheduler, BossBarManager bossBar, Logger logger) {
         this.plugin = plugin;
         this.config = config;
         this.cleanupService = new WorldCleanupService();
         this.playerManager = playerManager;
         this.scheduler = scheduler;
         this.bossBar = bossBar;
+        this.logger = logger;
     }
 
     public void initializeWorlds() {
@@ -39,27 +41,30 @@ public class WorldManager {
     }
 
     public void resetWorld(Player initiator) {
-        // Remove async task wrapper for world creation
+        initiator.sendMessage(ChatColor.GREEN + "World generation started...");
         World newWorld = createNewWorld();
 
-        // Handle async-safe operations
         scheduler.runTask(() -> {
             teleportPlayers(newWorld);
             cleanupService.cleanupOldRuns();
             bossBar.startTimer();
+            initiator.sendMessage(ChatColor.GREEN + "World reset complete!");
         });
     }
 
     private World createNewWorld() {
-        WorldCreator wc = new WorldCreator("run_" + System.currentTimeMillis())
-                .seed(new Random().nextLong())
-                .type(WorldType.NORMAL)
-                .environment(World.Environment.NORMAL)
-                .hardcore(true);
+        try {
+            WorldCreator wc = new WorldCreator("run_" + System.currentTimeMillis())
+                    .seed(new Random().nextLong())
+                    .type(WorldType.NORMAL)
+                    .environment(World.Environment.NORMAL)
+                    .hardcore(true);
 
-        // Explicitly set world border first to prevent async issues
-        wc.generateStructures(true);
-        return wc.createWorld();
+            return wc.createWorld();
+        } catch (Exception e) {
+            logger.severe("Failed to create new world: " + e.getMessage());
+            throw new RuntimeException("World creation failed", e);
+        }
     }
 
     private void teleportPlayers(World newWorld) {
@@ -71,7 +76,6 @@ public class WorldManager {
                 player.teleport(spawn);
                 playerManager.fullReset(player);
 
-                // Metadata handling
                 player.setMetadata("teleporting", new FixedMetadataValue(plugin, true));
                 scheduler.runTaskLater(() ->
                         player.removeMetadata("teleporting", plugin), 20L);

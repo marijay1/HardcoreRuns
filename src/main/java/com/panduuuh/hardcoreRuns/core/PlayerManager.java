@@ -13,11 +13,11 @@ import java.util.*;
 public class PlayerManager {
     private final Set<UUID> processingDamage = new HashSet<>();
     private final HardcoreRuns plugin;
-    private final BukkitTaskScheduler scheduler;
-    private final BukkitLogger logger;
+    private final TaskScheduler scheduler;
+    private final Logger logger;
     private final TotemService totemService;
 
-    public PlayerManager(HardcoreRuns plugin, BukkitTaskScheduler scheduler, BukkitLogger logger) {
+    public PlayerManager(HardcoreRuns plugin, TaskScheduler scheduler, Logger logger) {
         this.plugin = plugin;
         this.scheduler = scheduler;
         this.logger = logger;
