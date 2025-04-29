@@ -17,14 +17,9 @@ public class HealthRegainListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerHeal(EntityRegainHealthEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        if (event.isCancelled()) return;
+        if (playerManager.isProcessingDamage(player.getUniqueId())) return;
 
-        // Skip if healing is from sync
-        if (playerManager.isProcessingDamage(player.getUniqueId())) {
-            return;
-        }
-
-        double newHealth = player.getHealth() + event.getAmount();
+        double newHealth = Math.min(20.0, player.getHealth() + event.getAmount());
         playerManager.handleHealing(player, newHealth);
     }
 }

@@ -45,7 +45,8 @@ public class PlayerManager {
     }
 
     private void propagateHealthChange(Player source, double newHealth) {
-        config.setSharedHealth(newHealth);
+        double clampedHealth = Math.max(0.0, Math.min(20.0, newHealth));
+        config.setSharedHealth(clampedHealth);
 
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p != source)
@@ -53,7 +54,7 @@ public class PlayerManager {
                     scheduler.runTask(() -> {
                         if (processingDamage.contains(p.getUniqueId())) return;
                         processingDamage.add(p.getUniqueId());
-                        p.setHealth(newHealth);
+                        p.setHealth(clampedHealth);
                         processingDamage.remove(p.getUniqueId());
                     });
                 });
@@ -73,15 +74,25 @@ public class PlayerManager {
             newPlayer.setMetadata("hardcore_attempt",
                     new FixedMetadataValue(plugin, currentAttempt));
             logger.info("Updated player " + newPlayer.getName() + " to attempt #" + currentAttempt);
+
+            World targetWorld = Bukkit.getWorld(worldManager.getCurrentRunId());
+            if (targetWorld == null) {
+                targetWorld = worldManager.createNewWorld();
+            }
+            newPlayer.teleport(targetWorld.getSpawnLocation());
         } else {
             logger.info("Player " + newPlayer.getName() + " already on current attempt #" + currentAttempt);
+            World currentWorld = newPlayer.getWorld();
+            String currentRunId = worldManager.getCurrentRunId();
+            if (!currentWorld.getName().equals(currentRunId)) {
+                World targetWorld = Bukkit.getWorld(currentRunId);
+                if (targetWorld != null) {
+                    newPlayer.teleport(targetWorld.getSpawnLocation());
+                } else {
+                    logger.warning("Current run world not found: " + currentRunId);
+                }
+            }
         }
-
-        World targetWorld = Bukkit.getWorld(worldManager.getCurrentRunId());
-        if (targetWorld == null) {
-            targetWorld = worldManager.createNewWorld();
-        }
-        newPlayer.teleport(targetWorld.getSpawnLocation());
 
         if (Bukkit.getOnlinePlayers().size() == 1) {
             newPlayer.setHealth(config.getSharedHealth());

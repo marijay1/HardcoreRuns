@@ -36,7 +36,12 @@ public class DamageListener implements Listener {
     }
 
     private void broadcastHeartsLost(Player victim, double hearts) {
-        String heartsFormatted = String.format("%.1f", hearts);
+        double roundedHearts = Math.round(hearts * 2) / 2.0;
+
+        String heartsFormatted = roundedHearts % 1 == 0
+                ? String.format("%.0f", roundedHearts)
+                : String.format("%.1f", roundedHearts);
+
         String message = ChatColor.WHITE + victim.getName() + " has taken" +
                 ChatColor.RED + " ❤ " + heartsFormatted +
                 ChatColor.WHITE + " hearts";
