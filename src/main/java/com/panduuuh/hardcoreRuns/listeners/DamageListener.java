@@ -19,6 +19,7 @@ public class DamageListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player victim)) return;
+        if (!playerManager.getConfig().isHealthShared()) return;
         if (event.isCancelled()) return;
 
         // Skip if this damage is from sync

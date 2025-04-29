@@ -16,6 +16,8 @@ public class ExperienceListener implements Listener {
     @EventHandler
     public void onExpChange(PlayerExpChangeEvent event) {
         Player player = event.getPlayer();
+        if (!playerManager.getConfig().isExpShared() &&
+                !playerManager.getConfig().isLevelShared()) return;
         playerManager.syncExperience(player);
     }
 }

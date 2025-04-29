@@ -18,6 +18,7 @@ public class HealthRegainListener implements Listener {
     public void onPlayerHeal(EntityRegainHealthEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (playerManager.isProcessingDamage(player.getUniqueId())) return;
+        if (!playerManager.getConfig().isHealthShared()) return;
 
         double newHealth = Math.min(20.0, player.getHealth() + event.getAmount());
         playerManager.handleHealing(player, newHealth);

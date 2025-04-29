@@ -16,6 +16,7 @@ public class FoodListener implements Listener {
     @EventHandler
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
+        if (!playerManager.getConfig().isFoodShared()) return;
         playerManager.syncFoodLevel(player, event.getFoodLevel());
     }
 }

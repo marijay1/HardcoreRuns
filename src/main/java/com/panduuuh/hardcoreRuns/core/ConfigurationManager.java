@@ -89,4 +89,20 @@ public class ConfigurationManager {
     public void setSharedLevel(int level) {
         plugin.getConfig().set("shared.level", level);
     }
+
+    public boolean isHealthShared() {
+        return plugin.getConfig().getBoolean("shared.enable-health", true);
+    }
+
+    public boolean isFoodShared() {
+        return plugin.getConfig().getBoolean("shared.enable-food", true);
+    }
+
+    public boolean isExpShared() {
+        return plugin.getConfig().getBoolean("shared.enable-exp", true);
+    }
+
+    public boolean isLevelShared() {
+        return plugin.getConfig().getBoolean("shared.enable-level", true);
+    }
 }

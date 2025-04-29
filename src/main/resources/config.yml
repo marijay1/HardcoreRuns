@@ -8,3 +8,7 @@ shared:
   food: 20
   exp: 0.0
   level: 0
+  enable-health: true
+  enable-food: true
+  enable-exp: true
+  enable-level: true

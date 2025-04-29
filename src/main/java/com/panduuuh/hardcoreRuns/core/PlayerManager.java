@@ -45,6 +45,7 @@ public class PlayerManager {
     }
 
     private void propagateHealthChange(Player source, double newHealth) {
+        if (!config.isHealthShared()) return;
         double clampedHealth = Math.max(0.0, Math.min(20.0, newHealth));
         config.setSharedHealth(clampedHealth);
 
@@ -95,10 +96,10 @@ public class PlayerManager {
         }
 
         if (Bukkit.getOnlinePlayers().size() == 1) {
-            newPlayer.setHealth(config.getSharedHealth());
-            newPlayer.setFoodLevel(config.getSharedFood());
-            newPlayer.setExp(config.getSharedExp());
-            newPlayer.setLevel(config.getSharedLevel());
+            if (config.isHealthShared()) newPlayer.setHealth(config.getSharedHealth());
+            if (config.isFoodShared()) newPlayer.setFoodLevel(config.getSharedFood());
+            if (config.isExpShared()) newPlayer.setExp(config.getSharedExp());
+            if (config.isLevelShared()) newPlayer.setLevel(config.getSharedLevel());
         } else {
             Player existing = Bukkit.getOnlinePlayers().stream()
                     .filter(p -> p != newPlayer)
@@ -111,10 +112,10 @@ public class PlayerManager {
     }
 
     private void syncToExistingPlayer(Player newPlayer, Player existing) {
-        newPlayer.setHealth(existing.getHealth());
-        newPlayer.setFoodLevel(existing.getFoodLevel());
-        newPlayer.setExp(existing.getExp());
-        newPlayer.setLevel(existing.getLevel());
+        if (config.isHealthShared()) newPlayer.setHealth(existing.getHealth());
+        if (config.isFoodShared()) newPlayer.setFoodLevel(existing.getFoodLevel());
+        if (config.isExpShared()) newPlayer.setExp(existing.getExp());
+        if (config.isLevelShared()) newPlayer.setLevel(existing.getLevel());
     }
 
     public boolean handleTeamTotemActivation() {
@@ -140,7 +141,7 @@ public class PlayerManager {
     }
 
     public void syncFoodLevel(Player source, int newLevel) {
-        if (source.hasMetadata("syncing_food")) return;
+        if (!config.isFoodShared() || source.hasMetadata("syncing_food")) return;
 
         config.setSharedFood(newLevel);
 
@@ -158,14 +159,15 @@ public class PlayerManager {
 
         float exp = source.getExp();
         int level = source.getLevel();
-        config.setSharedExp(exp);
-        config.setSharedLevel(level);
+
+        if (config.isExpShared()) config.setSharedExp(exp);
+        if (config.isLevelShared()) config.setSharedLevel(level);
 
         Bukkit.getOnlinePlayers().forEach(p -> {
             if (p != source) {
                 p.setMetadata("syncing_exp", new FixedMetadataValue(plugin, true));
-                p.setExp(exp);
-                p.setLevel(level);
+                if (config.isExpShared()) p.setExp(exp);
+                if (config.isLevelShared()) p.setLevel(level);
                 p.removeMetadata("syncing_exp", plugin);
             }
         });
@@ -200,5 +202,9 @@ public class PlayerManager {
 
     public HardcoreRuns getPlugin() {
         return plugin;
+    }
+
+    public ConfigurationManager getConfig() {
+        return config;
     }
 }
