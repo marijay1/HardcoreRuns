@@ -32,30 +32,31 @@ public class PlayerManager {
         if (processingDamage.contains(source.getUniqueId())) return;
 
         processingDamage.add(source.getUniqueId());
-        propagateDamage(source, damage);
+        propagateHealthChange(source, source.getHealth() - damage); // Track net health
         processingDamage.remove(source.getUniqueId());
     }
 
-    private void propagateDamage(Player source, double damage) {
+    public void handleHealing(Player source, double newHealth) {
+        if (processingDamage.contains(source.getUniqueId())) return;
+
+        processingDamage.add(source.getUniqueId());
+        propagateHealthChange(source, newHealth);
+        processingDamage.remove(source.getUniqueId());
+    }
+
+    private void propagateHealthChange(Player source, double newHealth) {
+        config.setSharedHealth(newHealth);
+
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p != source)
                 .forEach(p -> {
                     scheduler.runTask(() -> {
-                        applySyncedDamage(p, damage);
+                        if (processingDamage.contains(p.getUniqueId())) return;
+                        processingDamage.add(p.getUniqueId());
+                        p.setHealth(newHealth);
+                        processingDamage.remove(p.getUniqueId());
                     });
                 });
-    }
-
-    private void applySyncedDamage(Player target, double damage) {
-        if (processingDamage.contains(target.getUniqueId())) return;
-        if (!Bukkit.isPrimaryThread()) {
-            logger.warning("Attempted async damage application!");
-            return;
-        }
-
-        processingDamage.add(target.getUniqueId());
-        target.damage(damage);
-        processingDamage.remove(target.getUniqueId());
     }
 
     public void syncNewPlayer(Player newPlayer) {
@@ -81,20 +82,28 @@ public class PlayerManager {
             targetWorld = worldManager.createNewWorld();
         }
         newPlayer.teleport(targetWorld.getSpawnLocation());
+
+        if (Bukkit.getOnlinePlayers().size() == 1) {
+            newPlayer.setHealth(config.getSharedHealth());
+            newPlayer.setFoodLevel(config.getSharedFood());
+            newPlayer.setExp(config.getSharedExp());
+            newPlayer.setLevel(config.getSharedLevel());
+        } else {
+            Player existing = Bukkit.getOnlinePlayers().stream()
+                    .filter(p -> p != newPlayer)
+                    .findFirst()
+                    .orElse(null);
+            if (existing != null) {
+                syncToExistingPlayer(newPlayer, existing);
+            }
+        }
     }
 
     private void syncToExistingPlayer(Player newPlayer, Player existing) {
         newPlayer.setHealth(existing.getHealth());
         newPlayer.setFoodLevel(existing.getFoodLevel());
-        newPlayer.teleport(existing.getLocation());
-    }
-
-    private void initializeNewPlayer(Player player) {
-        World targetWorld = Bukkit.getWorld(worldManager.getCurrentRunId());
-        if (targetWorld == null) {
-            targetWorld = Bukkit.getWorlds().get(0); // Fallback only if no runs exist
-        }
-        player.teleport(targetWorld.getSpawnLocation());
+        newPlayer.setExp(existing.getExp());
+        newPlayer.setLevel(existing.getLevel());
     }
 
     public boolean handleTeamTotemActivation() {
@@ -122,6 +131,8 @@ public class PlayerManager {
     public void syncFoodLevel(Player source, int newLevel) {
         if (source.hasMetadata("syncing_food")) return;
 
+        config.setSharedFood(newLevel);
+
         Bukkit.getOnlinePlayers().forEach(p -> {
             if (p != source) {
                 p.setMetadata("syncing_food", new FixedMetadataValue(plugin, true));
@@ -136,6 +147,8 @@ public class PlayerManager {
 
         float exp = source.getExp();
         int level = source.getLevel();
+        config.setSharedExp(exp);
+        config.setSharedLevel(level);
 
         Bukkit.getOnlinePlayers().forEach(p -> {
             if (p != source) {

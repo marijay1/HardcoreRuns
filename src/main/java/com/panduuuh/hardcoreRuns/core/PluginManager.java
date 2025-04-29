@@ -41,7 +41,9 @@ public class PluginManager {
                 new DeathListener(player, world, discord, notificationService, bossBar),
                 new JoinListener(player, bossBar),
                 new FoodListener(player),
-                new ExperienceListener(player)
+                new ExperienceListener(player),
+                new QuitListener(config),
+                new HealthRegainListener(player)
         );
 
         this.player.setWorldManager(world);

@@ -1,6 +1,10 @@
 # Discord Webhook URL (leave empty to disable)
 discord-webhook: ""
-# Don't modify this value manually
 attempts: 1
 active-world: ""
 players:
+shared:
+  health: 20.0
+  food: 20
+  exp: 0.0
+  level: 0

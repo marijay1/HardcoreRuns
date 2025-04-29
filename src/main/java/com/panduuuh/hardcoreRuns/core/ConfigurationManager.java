@@ -57,4 +57,36 @@ public class ConfigurationManager {
     public String getWebhookUrl() {
         return plugin.getConfig().getString("discord-webhook", "");
     }
+
+    public double getSharedHealth() {
+        return plugin.getConfig().getDouble("shared.health", 20.0);
+    }
+
+    public int getSharedFood() {
+        return plugin.getConfig().getInt("shared.food", 20);
+    }
+
+    public float getSharedExp() {
+        return (float) plugin.getConfig().getDouble("shared.exp", 0.0);
+    }
+
+    public int getSharedLevel() {
+        return plugin.getConfig().getInt("shared.level", 0);
+    }
+
+    public void setSharedHealth(double health) {
+        plugin.getConfig().set("shared.health", health);
+    }
+
+    public void setSharedFood(int food) {
+        plugin.getConfig().set("shared.food", food);
+    }
+
+    public void setSharedExp(float exp) {
+        plugin.getConfig().set("shared.exp", (double) exp);
+    }
+
+    public void setSharedLevel(int level) {
+        plugin.getConfig().set("shared.level", level);
+    }
 }

@@ -79,6 +79,12 @@ public class WorldManager {
         config.incrementAttempts();
         updateAllPlayerAttempts();
 
+        config.setSharedHealth(20.0);
+        config.setSharedFood(20);
+        config.setSharedExp(0.0f);
+        config.setSharedLevel(0);
+        config.save();
+
         initiator.sendMessage(ChatColor.GREEN + "World generation started...");
         World newWorld = createNewWorld();
 
