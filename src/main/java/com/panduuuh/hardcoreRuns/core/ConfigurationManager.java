@@ -15,6 +15,10 @@ public class ConfigurationManager {
     public void load() {
         plugin.reloadConfig();
         attempts = plugin.getConfig().getInt("attempts", 1);
+        if (attempts <= 0) {
+            attempts = 1;
+            save();
+        }
         plugin.getLogger().info("Loaded attempt count from config: " + attempts);
     }
 
