@@ -41,7 +41,6 @@ public class DeathListener implements Listener {
         }
 
         worldManager.setResetPending(true);
-        worldManager.incrementAttempt();
 
         Bukkit.getOnlinePlayers().stream()
                 .filter(p -> p.isOnline() && !p.isDead() && p != player)

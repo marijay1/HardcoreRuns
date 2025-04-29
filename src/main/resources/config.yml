@@ -1,4 +1,4 @@
 # Discord Webhook URL (leave empty to disable)
 discord-webhook: ""
 # Don't modify this value manually
-attempts: 0
+attempts: 1

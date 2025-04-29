@@ -26,7 +26,7 @@ public class PluginManager {
         this.config = new ConfigurationManager(plugin);
         this.scheduler = new BukkitTaskScheduler(plugin);
         this.logger = new BukkitLogger(plugin);
-        this.player = new PlayerManager(plugin, scheduler, logger);
+        this.player = new PlayerManager(plugin, config, scheduler, logger);
         this.bossBar = new BossBarManager(scheduler, config);
         this.world = new WorldManager(plugin, config, player, scheduler, bossBar, logger);
         this.discord = new DiscordService(config, scheduler, logger);
@@ -40,6 +40,8 @@ public class PluginManager {
                 new FoodListener(player),
                 new ExperienceListener(player)
         );
+
+        this.player.setWorldManager(world);
     }
 
     public void initialize() {

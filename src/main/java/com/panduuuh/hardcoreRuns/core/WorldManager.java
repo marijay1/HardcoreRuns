@@ -17,6 +17,7 @@ public class WorldManager {
     private final Logger logger;
     private long runStartTime;
     private boolean resetPending = false;
+    private String currentRunId;
 
     public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager, TaskScheduler scheduler, BossBarManager bossBar, Logger logger) {
         this.plugin = plugin;
@@ -41,6 +42,9 @@ public class WorldManager {
     }
 
     public void resetWorld(Player initiator) {
+        config.incrementAttempts();
+        config.save();
+
         initiator.sendMessage(ChatColor.GREEN + "World generation started...");
         World newWorld = createNewWorld();
 
@@ -52,14 +56,17 @@ public class WorldManager {
         });
     }
 
-    private World createNewWorld() {
+    public World createNewWorld() {
         try {
-            WorldCreator wc = new WorldCreator("run_" + System.currentTimeMillis())
+            this.currentRunId = "run_" + System.currentTimeMillis();
+
+            WorldCreator wc = new WorldCreator(currentRunId)
                     .seed(new Random().nextLong())
                     .type(WorldType.NORMAL)
                     .environment(World.Environment.NORMAL)
                     .hardcore(true);
 
+            config.setActiveWorldName(currentRunId);
             return wc.createWorld();
         } catch (Exception e) {
             logger.severe("Failed to create new world: " + e.getMessage());
@@ -73,18 +80,16 @@ public class WorldManager {
             spawn.getChunk().load();
 
             Bukkit.getOnlinePlayers().forEach(player -> {
-                player.teleport(spawn);
+                player.setMetadata("hardcore_run",
+                        new FixedMetadataValue(plugin, currentRunId));
                 playerManager.fullReset(player);
-
-                player.setMetadata("teleporting", new FixedMetadataValue(plugin, true));
-                scheduler.runTaskLater(() ->
-                        player.removeMetadata("teleporting", plugin), 20L);
+                player.teleport(spawn);
             });
         }, 20L);
     }
 
-    public void incrementAttempt() {
-        config.incrementAttempts();
+    public String getCurrentRunId() {
+        return currentRunId;
     }
 
     public long getRunStartTime() {

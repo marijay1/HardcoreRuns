@@ -3,6 +3,7 @@ package com.panduuuh.hardcoreRuns.core;
 import com.panduuuh.hardcoreRuns.HardcoreRuns;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
@@ -12,13 +13,16 @@ import java.util.*;
 
 public class PlayerManager {
     private final Set<UUID> processingDamage = new HashSet<>();
+    private final ConfigurationManager config;
     private final HardcoreRuns plugin;
     private final TaskScheduler scheduler;
     private final Logger logger;
     private final TotemService totemService;
+    private WorldManager worldManager;
 
-    public PlayerManager(HardcoreRuns plugin, TaskScheduler scheduler, Logger logger) {
+    public PlayerManager(HardcoreRuns plugin, ConfigurationManager config, TaskScheduler scheduler, Logger logger) {
         this.plugin = plugin;
+        this.config = config;
         this.scheduler = scheduler;
         this.logger = logger;
         this.totemService = new TotemService();
@@ -55,6 +59,20 @@ public class PlayerManager {
     }
 
     public void syncNewPlayer(Player newPlayer) {
+        int currentAttempt = config.getAttempts();
+        UUID playerId = newPlayer.getUniqueId();
+
+        int playersLastAttempt = newPlayer.getMetadata("hardcore_attempt").stream()
+                .findFirst()
+                .map(m -> m.asInt())
+                .orElse(config.getPlayerAttempt(playerId));
+
+        if (currentAttempt != playersLastAttempt) {
+            fullReset(newPlayer);
+            newPlayer.setMetadata("hardcore_attempt",
+                    new FixedMetadataValue(plugin, currentAttempt));
+        }
+
         Optional<Player> existing = Bukkit.getOnlinePlayers().stream()
                 .map(p -> (Player) p)
                 .filter(p -> p != newPlayer)
@@ -73,10 +91,11 @@ public class PlayerManager {
     }
 
     private void initializeNewPlayer(Player player) {
-        fullReset(player);
-        player.teleport(Objects.requireNonNull(
-                Bukkit.getWorld("world")).getSpawnLocation()
-        );
+        World targetWorld = Bukkit.getWorld(worldManager.getCurrentRunId());
+        if (targetWorld == null) {
+            targetWorld = Bukkit.getWorlds().get(0); // Fallback only if no runs exist
+        }
+        player.teleport(targetWorld.getSpawnLocation());
     }
 
     public boolean handleTeamTotemActivation() {
@@ -150,6 +169,10 @@ public class PlayerManager {
     private void clearNegativeEffects(Player player) {
         player.getActivePotionEffects()
                 .forEach(e -> player.removePotionEffect(e.getType()));
+    }
+
+    public void setWorldManager(WorldManager worldManager) {
+        this.worldManager = worldManager;
     }
 
     public HardcoreRuns getPlugin() {
