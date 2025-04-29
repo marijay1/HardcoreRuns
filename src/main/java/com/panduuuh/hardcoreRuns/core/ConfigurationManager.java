@@ -13,7 +13,9 @@ public class ConfigurationManager {
     }
 
     public void load() {
+        plugin.reloadConfig();
         attempts = plugin.getConfig().getInt("attempts", 1);
+        plugin.getLogger().info("Loaded attempt count from config: " + attempts);
     }
 
     public void save() {

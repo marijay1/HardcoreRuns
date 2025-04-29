@@ -5,6 +5,7 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 
+import java.io.File;
 import java.util.Random;
 
 public class WorldManager {
@@ -31,21 +32,42 @@ public class WorldManager {
     }
 
     public void initializeWorlds() {
-        World activeWorld = Bukkit.getWorld(config.getActiveWorld());
+        String savedWorldName = config.getActiveWorld();
+        logger.info("Attempting to load saved world: " + savedWorldName);
+
+        if (savedWorldName == null || savedWorldName.isEmpty()) {
+            logger.warning("No valid world found in config, creating new world");
+            createNewWorld();
+            return;
+        }
+
+        World activeWorld = Bukkit.getWorld(savedWorldName);
         if (activeWorld == null) {
+            File worldFolder = new File(Bukkit.getWorldContainer(), savedWorldName);
+            if (worldFolder.exists() && worldFolder.isDirectory()) {
+                logger.info("Found world directory, loading world: " + savedWorldName);
+                WorldCreator creator = new WorldCreator(savedWorldName);
+                activeWorld = creator.createWorld();
+            }
+        }
+
+        if (activeWorld == null) {
+            logger.warning("Could not load world " + savedWorldName + ", creating new world");
             createNewWorld();
         } else {
+            currentRunId = savedWorldName;
             activeWorld.setDifficulty(Difficulty.HARD);
             activeWorld.setHardcore(true);
+            logger.info("Successfully loaded world: " + currentRunId);
         }
+
         runStartTime = System.currentTimeMillis();
     }
 
     private void loadPersistentState() {
         currentRunId = config.getActiveWorld();
-        if (Bukkit.getWorld(currentRunId) == null) {
-            createNewWorld();
-        }
+        logger.info("Loaded run ID from config: " + currentRunId);
+
         runStartTime = System.currentTimeMillis();
     }
 

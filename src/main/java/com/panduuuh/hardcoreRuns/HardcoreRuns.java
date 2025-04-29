@@ -15,6 +15,8 @@ public class HardcoreRuns extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        pluginManager.shutdown();
+        if (pluginManager != null) {
+            pluginManager.shutdown();
+        }
     }
 }
