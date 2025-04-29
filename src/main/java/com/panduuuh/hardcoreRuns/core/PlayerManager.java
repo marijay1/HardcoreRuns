@@ -59,29 +59,22 @@ public class PlayerManager {
     }
 
     public void syncNewPlayer(Player newPlayer) {
-        int currentAttempt = config.getAttempts();
         UUID playerId = newPlayer.getUniqueId();
+        int currentAttempt = config.getAttempts();
+        int lastAttempt = config.getPlayerAttempt(playerId);
 
-        int playersLastAttempt = newPlayer.getMetadata("hardcore_attempt").stream()
-                .findFirst()
-                .map(m -> m.asInt())
-                .orElse(config.getPlayerAttempt(playerId));
-
-        if (currentAttempt != playersLastAttempt) {
+        if (currentAttempt != lastAttempt) {
             fullReset(newPlayer);
+            config.setPlayerAttempt(playerId, currentAttempt);
             newPlayer.setMetadata("hardcore_attempt",
                     new FixedMetadataValue(plugin, currentAttempt));
         }
 
-        Optional<Player> existing = Bukkit.getOnlinePlayers().stream()
-                .map(p -> (Player) p)
-                .filter(p -> p != newPlayer)
-                .findFirst();
-
-        existing.ifPresentOrElse(
-                target -> syncToExistingPlayer(newPlayer, target),
-                () -> initializeNewPlayer(newPlayer)
-        );
+        World targetWorld = Bukkit.getWorld(worldManager.getCurrentRunId());
+        if (targetWorld == null) {
+            targetWorld = worldManager.createNewWorld();
+        }
+        newPlayer.teleport(targetWorld.getSpawnLocation());
     }
 
     private void syncToExistingPlayer(Player newPlayer, Player existing) {

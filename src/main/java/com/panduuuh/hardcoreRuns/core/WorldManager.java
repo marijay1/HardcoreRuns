@@ -27,13 +27,25 @@ public class WorldManager {
         this.scheduler = scheduler;
         this.bossBar = bossBar;
         this.logger = logger;
+        loadPersistentState();
     }
 
     public void initializeWorlds() {
-        Bukkit.getWorlds().forEach(world -> {
-            world.setDifficulty(Difficulty.HARD);
-            world.setHardcore(true);
-        });
+        World activeWorld = Bukkit.getWorld(config.getActiveWorld());
+        if (activeWorld == null) {
+            createNewWorld();
+        } else {
+            activeWorld.setDifficulty(Difficulty.HARD);
+            activeWorld.setHardcore(true);
+        }
+        runStartTime = System.currentTimeMillis();
+    }
+
+    private void loadPersistentState() {
+        currentRunId = config.getActiveWorld();
+        if (Bukkit.getWorld(currentRunId) == null) {
+            createNewWorld();
+        }
         runStartTime = System.currentTimeMillis();
     }
 
@@ -43,7 +55,6 @@ public class WorldManager {
 
     public void resetWorld(Player initiator) {
         config.incrementAttempts();
-        config.save();
 
         initiator.sendMessage(ChatColor.GREEN + "World generation started...");
         World newWorld = createNewWorld();
@@ -58,7 +69,7 @@ public class WorldManager {
 
     public World createNewWorld() {
         try {
-            this.currentRunId = "run_" + System.currentTimeMillis();
+            currentRunId = "run_" + System.currentTimeMillis();
 
             WorldCreator wc = new WorldCreator(currentRunId)
                     .seed(new Random().nextLong())
@@ -66,7 +77,7 @@ public class WorldManager {
                     .environment(World.Environment.NORMAL)
                     .hardcore(true);
 
-            config.setActiveWorldName(currentRunId);
+            config.setActiveWorld(currentRunId);
             return wc.createWorld();
         } catch (Exception e) {
             logger.severe("Failed to create new world: " + e.getMessage());

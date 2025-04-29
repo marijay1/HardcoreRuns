@@ -1,7 +1,6 @@
 package com.panduuuh.hardcoreRuns.core;
 
 import org.bukkit.plugin.Plugin;
-
 import java.util.UUID;
 
 public class ConfigurationManager {
@@ -14,7 +13,7 @@ public class ConfigurationManager {
     }
 
     public void load() {
-        attempts = plugin.getConfig().getInt("attempts", 0);
+        attempts = plugin.getConfig().getInt("attempts", 1);
     }
 
     public void save() {
@@ -31,11 +30,11 @@ public class ConfigurationManager {
         save();
     }
 
-    public String getActiveWorldName() {
+    public String getActiveWorld() {
         return plugin.getConfig().getString("active-world", "world");
     }
 
-    public void setActiveWorldName(String worldName) {
+    public void setActiveWorld(String worldName) {
         plugin.getConfig().set("active-world", worldName);
         save();
     }

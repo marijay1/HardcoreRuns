@@ -3,6 +3,9 @@ package com.panduuuh.hardcoreRuns.core;
 import com.panduuuh.hardcoreRuns.HardcoreRuns;
 import com.panduuuh.hardcoreRuns.commands.ResetCommand;
 import com.panduuuh.hardcoreRuns.listeners.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Difficulty;
+import org.bukkit.World;
 import org.bukkit.event.Listener;
 
 import java.util.Arrays;

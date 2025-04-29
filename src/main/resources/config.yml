@@ -2,3 +2,5 @@
 discord-webhook: ""
 # Don't modify this value manually
 attempts: 1
+active-world: ""
+players:
