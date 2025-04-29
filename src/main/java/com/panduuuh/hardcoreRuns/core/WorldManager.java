@@ -55,6 +55,7 @@ public class WorldManager {
 
     public void resetWorld(Player initiator) {
         config.incrementAttempts();
+        updateAllPlayerAttempts();
 
         initiator.sendMessage(ChatColor.GREEN + "World generation started...");
         World newWorld = createNewWorld();
@@ -97,6 +98,12 @@ public class WorldManager {
                 player.teleport(spawn);
             });
         }, 20L);
+    }
+
+    private void updateAllPlayerAttempts() {
+        int currentAttempt = config.getAttempts();
+        Bukkit.getOnlinePlayers().forEach(player ->
+                config.setPlayerAttempt(player.getUniqueId(), currentAttempt));
     }
 
     public String getCurrentRunId() {

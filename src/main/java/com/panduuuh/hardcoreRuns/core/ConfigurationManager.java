@@ -39,8 +39,15 @@ public class ConfigurationManager {
         save();
     }
 
-    public int getAttempts() { return attempts; }
-    public void incrementAttempts() { attempts++; }
+    public int getAttempts() {
+        return attempts;
+    }
+
+    public void incrementAttempts() {
+        attempts++;
+        save();
+    }
+
     public String getWebhookUrl() {
         return plugin.getConfig().getString("discord-webhook", "");
     }

@@ -63,11 +63,17 @@ public class PlayerManager {
         int currentAttempt = config.getAttempts();
         int lastAttempt = config.getPlayerAttempt(playerId);
 
+        logger.info("Player " + newPlayer.getName() + " joining - Current attempt: " +
+                currentAttempt + ", Last player attempt: " + lastAttempt);
+
         if (currentAttempt != lastAttempt) {
             fullReset(newPlayer);
             config.setPlayerAttempt(playerId, currentAttempt);
             newPlayer.setMetadata("hardcore_attempt",
                     new FixedMetadataValue(plugin, currentAttempt));
+            logger.info("Updated player " + newPlayer.getName() + " to attempt #" + currentAttempt);
+        } else {
+            logger.info("Player " + newPlayer.getName() + " already on current attempt #" + currentAttempt);
         }
 
         World targetWorld = Bukkit.getWorld(worldManager.getCurrentRunId());
