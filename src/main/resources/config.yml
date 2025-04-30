@@ -12,3 +12,5 @@ shared:
   enable-food: true
   enable-exp: true
   enable-level: true
+  enable-inventory: true
+  inventory-id: ""

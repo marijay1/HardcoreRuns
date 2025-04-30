@@ -18,14 +18,16 @@ public class PlayerManager {
     private final TaskScheduler scheduler;
     private final Logger logger;
     private final TotemService totemService;
+    private final SharedInventoryManager sharedInventoryManager;
     private WorldManager worldManager;
 
-    public PlayerManager(HardcoreRuns plugin, ConfigurationManager config, TaskScheduler scheduler, Logger logger) {
+    public PlayerManager(HardcoreRuns plugin, ConfigurationManager config, TaskScheduler scheduler, Logger logger, SharedInventoryManager sharedInventoryManager) {
         this.plugin = plugin;
         this.config = config;
         this.scheduler = scheduler;
         this.logger = logger;
         this.totemService = new TotemService();
+        this.sharedInventoryManager = sharedInventoryManager;
     }
 
     public void handleDamage(Player source, double damage) {
@@ -100,6 +102,9 @@ public class PlayerManager {
             if (config.isFoodShared()) newPlayer.setFoodLevel(config.getSharedFood());
             if (config.isExpShared()) newPlayer.setExp(config.getSharedExp());
             if (config.isLevelShared()) newPlayer.setLevel(config.getSharedLevel());
+            if (config.isInventoryShared()) {
+                sharedInventoryManager.syncPlayerWithSharedInventory(newPlayer);
+            }
         } else {
             Player existing = Bukkit.getOnlinePlayers().stream()
                     .filter(p -> p != newPlayer)
@@ -116,6 +121,9 @@ public class PlayerManager {
         if (config.isFoodShared()) newPlayer.setFoodLevel(existing.getFoodLevel());
         if (config.isExpShared()) newPlayer.setExp(existing.getExp());
         if (config.isLevelShared()) newPlayer.setLevel(existing.getLevel());
+        if (config.isInventoryShared()) {
+            sharedInventoryManager.syncPlayerWithSharedInventory(newPlayer);
+        }
     }
 
     public boolean handleTeamTotemActivation() {
@@ -171,6 +179,12 @@ public class PlayerManager {
                 p.removeMetadata("syncing_exp", plugin);
             }
         });
+    }
+
+    public void syncPlayerInventory(Player player) {
+        if (sharedInventoryManager != null && config.isInventoryShared()) {
+            sharedInventoryManager.syncPlayerWithSharedInventory(player);
+        }
     }
 
     public void fullReset(Player player) {

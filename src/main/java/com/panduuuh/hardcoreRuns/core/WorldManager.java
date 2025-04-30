@@ -16,11 +16,14 @@ public class WorldManager {
     private final TaskScheduler scheduler;
     private final BossBarManager bossBar;
     private final Logger logger;
+    private final SharedInventoryManager sharedInventoryManager;
     private long runStartTime;
     private boolean resetPending = false;
     private String currentRunId;
 
-    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager, TaskScheduler scheduler, BossBarManager bossBar, Logger logger) {
+    public WorldManager(HardcoreRuns plugin, ConfigurationManager config, PlayerManager playerManager,
+                        TaskScheduler scheduler, BossBarManager bossBar, Logger logger,
+                        SharedInventoryManager sharedInventoryManager) {
         this.plugin = plugin;
         this.config = config;
         this.cleanupService = new WorldCleanupService();
@@ -28,6 +31,7 @@ public class WorldManager {
         this.scheduler = scheduler;
         this.bossBar = bossBar;
         this.logger = logger;
+        this.sharedInventoryManager = sharedInventoryManager;
         loadPersistentState();
     }
 
@@ -83,6 +87,11 @@ public class WorldManager {
         config.setSharedFood(20);
         config.setSharedExp(0.0f);
         config.setSharedLevel(0);
+
+        if (sharedInventoryManager != null) {
+            sharedInventoryManager.reset();
+        }
+
         config.save();
 
         initiator.sendMessage(ChatColor.GREEN + "World generation started...");

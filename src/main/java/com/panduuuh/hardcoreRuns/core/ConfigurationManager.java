@@ -105,4 +105,18 @@ public class ConfigurationManager {
     public boolean isLevelShared() {
         return plugin.getConfig().getBoolean("shared.enable-level", true);
     }
+
+    public boolean isInventoryShared() {
+        return plugin.getConfig().getBoolean("shared.enable-inventory", true);
+    }
+
+    public String getSharedInventoryId() {
+        String id = plugin.getConfig().getString("shared.inventory-id");
+        if (id == null || id.isEmpty()) {
+            id = UUID.randomUUID().toString();
+            plugin.getConfig().set("shared.inventory-id", id);
+            save();
+        }
+        return id;
+    }
 }
