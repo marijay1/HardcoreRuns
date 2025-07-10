@@ -64,6 +64,11 @@ public class PlayerManager {
     }
 
     public void syncNewPlayer(Player newPlayer) {
+        if (newPlayer == null) {
+            logger.warning("Attempted to sync null player");
+            return;
+        }
+        
         UUID playerId = newPlayer.getUniqueId();
         int currentAttempt = config.getAttempts();
         int lastAttempt = config.getPlayerAttempt(playerId);
@@ -117,6 +122,11 @@ public class PlayerManager {
     }
 
     private void syncToExistingPlayer(Player newPlayer, Player existing) {
+        if (newPlayer == null || existing == null) {
+            logger.warning("Cannot sync players: one or both players are null");
+            return;
+        }
+        
         if (config.isHealthShared()) newPlayer.setHealth(existing.getHealth());
         if (config.isFoodShared()) newPlayer.setFoodLevel(existing.getFoodLevel());
         if (config.isExpShared()) newPlayer.setExp(existing.getExp());
@@ -126,68 +136,12 @@ public class PlayerManager {
         }
     }
 
-    public boolean handleTeamTotemActivation() {
-        if (!totemService.teamHasTotems()) return false;
-
-        Bukkit.getOnlinePlayers().forEach(this::applyTotemEffects);
-        return true;
-    }
-
-    private void applyTotemEffects(Player player) {
-        totemService.consumeTotem(player);
-        player.setHealth(4);
-        player.setFoodLevel(20);
-        player.addPotionEffects(Arrays.asList(
-                new PotionEffect(PotionEffectType.REGENERATION, 100, 1),
-                new PotionEffect(PotionEffectType.RESISTANCE, 100, 1)
-        ));
-        clearNegativeEffects(player);
-    }
-
-    public void reviveAllPlayers() {
-        Bukkit.getOnlinePlayers().forEach(this::applyTotemEffects);
-    }
-
-    public void syncFoodLevel(Player source, int newLevel) {
-        if (!config.isFoodShared() || source.hasMetadata("syncing_food")) return;
-
-        config.setSharedFood(newLevel);
-
-        Bukkit.getOnlinePlayers().forEach(p -> {
-            if (p != source) {
-                p.setMetadata("syncing_food", new FixedMetadataValue(plugin, true));
-                p.setFoodLevel(newLevel);
-                p.removeMetadata("syncing_food", plugin);
-            }
-        });
-    }
-
-    public void syncExperience(Player source) {
-        if (source.hasMetadata("syncing_exp")) return;
-
-        float exp = source.getExp();
-        int level = source.getLevel();
-
-        if (config.isExpShared()) config.setSharedExp(exp);
-        if (config.isLevelShared()) config.setSharedLevel(level);
-
-        Bukkit.getOnlinePlayers().forEach(p -> {
-            if (p != source) {
-                p.setMetadata("syncing_exp", new FixedMetadataValue(plugin, true));
-                if (config.isExpShared()) p.setExp(exp);
-                if (config.isLevelShared()) p.setLevel(level);
-                p.removeMetadata("syncing_exp", plugin);
-            }
-        });
-    }
-
-    public void syncPlayerInventory(Player player) {
-        if (sharedInventoryManager != null && config.isInventoryShared()) {
-            sharedInventoryManager.syncPlayerWithSharedInventory(player);
-        }
-    }
-
     public void fullReset(Player player) {
+        if (player == null) {
+            logger.warning("Attempted to reset null player");
+            return;
+        }
+        
         player.setGameMode(GameMode.SURVIVAL);
         player.getInventory().clear();
         player.getEnderChest().clear();

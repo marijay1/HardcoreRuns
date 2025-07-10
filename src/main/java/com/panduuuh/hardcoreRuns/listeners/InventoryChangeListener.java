@@ -14,12 +14,15 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerItemBreakEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.plugin.Plugin;
 
 public class InventoryChangeListener implements Listener {
     private final SharedInventoryManager inventoryManager;
+    private final Plugin plugin;
 
     public InventoryChangeListener(SharedInventoryManager inventoryManager) {
         this.inventoryManager = inventoryManager;
+        this.plugin = inventoryManager.getPlugin();
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -33,7 +36,7 @@ public class InventoryChangeListener implements Listener {
     public void onItemDrop(PlayerDropItemEvent event) {
         if (!event.isCancelled()) {
             event.getPlayer().getServer().getScheduler().runTaskLater(
-                    event.getPlayer().getServer().getPluginManager().getPlugin("HardcoreRuns"),
+                    plugin,
                     () -> inventoryManager.updatePlayerInventory(event.getPlayer()),
                     1L
             );
@@ -44,7 +47,7 @@ public class InventoryChangeListener implements Listener {
     public void onItemPickup(EntityPickupItemEvent event) {
         if (!event.isCancelled() && event.getEntity() instanceof Player) {
             event.getEntity().getServer().getScheduler().runTaskLater(
-                    event.getEntity().getServer().getPluginManager().getPlugin("HardcoreRuns"),
+                    plugin,
                     () -> inventoryManager.updatePlayerInventory((Player) event.getEntity()),
                     1L
             );
@@ -62,7 +65,7 @@ public class InventoryChangeListener implements Listener {
     public void onItemConsume(PlayerItemConsumeEvent event) {
         if (!event.isCancelled()) {
             event.getPlayer().getServer().getScheduler().runTaskLater(
-                    event.getPlayer().getServer().getPluginManager().getPlugin("HardcoreRuns"),
+                    plugin,
                     () -> inventoryManager.updatePlayerInventory(event.getPlayer()),
                     1L
             );
@@ -72,7 +75,7 @@ public class InventoryChangeListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onItemBreak(PlayerItemBreakEvent event) {
         event.getPlayer().getServer().getScheduler().runTaskLater(
-                event.getPlayer().getServer().getPluginManager().getPlugin("HardcoreRuns"),
+                plugin,
                 () -> inventoryManager.updatePlayerInventory(event.getPlayer()),
                 1L
         );
@@ -82,7 +85,7 @@ public class InventoryChangeListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
         if (event.getKeepInventory()) {
             event.getEntity().getServer().getScheduler().runTaskLater(
-                    event.getEntity().getServer().getPluginManager().getPlugin("HardcoreRuns"),
+                    plugin,
                     () -> inventoryManager.updatePlayerInventory(event.getEntity()),
                     1L
             );

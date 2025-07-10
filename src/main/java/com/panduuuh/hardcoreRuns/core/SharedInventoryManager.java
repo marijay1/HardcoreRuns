@@ -113,6 +113,11 @@ public class SharedInventoryManager {
     }
 
     private String serializeInventory(ItemStack[] contents) {
+        if (contents == null) {
+            logger.warning("Attempted to serialize null inventory contents");
+            return "";
+        }
+        
         try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
              BukkitObjectOutputStream bukkitOut = new BukkitObjectOutputStream(byteStream)) {
 
@@ -190,5 +195,9 @@ public class SharedInventoryManager {
     public void reset() {
         sharedInventories.clear();
         saveSharedInventories();
+    }
+
+    public Plugin getPlugin() {
+        return plugin;
     }
 }
