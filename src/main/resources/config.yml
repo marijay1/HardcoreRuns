@@ -14,3 +14,6 @@ shared:
   enable-level: true
   enable-inventory: true
   inventory-id: ""
+damage:
+  hearts-per-damage: 2.0
+  min-threshold: 0.05

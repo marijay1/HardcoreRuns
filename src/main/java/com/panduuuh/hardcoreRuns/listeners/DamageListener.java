@@ -9,7 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 
 public class DamageListener implements Listener {
-    private static final double HEARTS_PER_DAMAGE = 2.0; // 1 heart = 2 damage points
     private final PlayerManager playerManager;
 
     public DamageListener(PlayerManager playerManager) {
@@ -28,9 +27,11 @@ public class DamageListener implements Listener {
         }
 
         double damage = event.getFinalDamage();
-        double hearts = damage / HEARTS_PER_DAMAGE;
+        double heartsPerDamage = playerManager.getConfig().getDamageHeartsRatio();
+        double hearts = damage / heartsPerDamage;
 
-        if (hearts <= 0.05) return;
+        double minThreshold = playerManager.getConfig().getMinDamageThreshold();
+        if (hearts <= minThreshold) return;
 
         playerManager.handleDamage(victim, damage);
         broadcastHeartsLost(victim, hearts);

@@ -75,18 +75,34 @@ public class ConfigurationManager {
     }
 
     public void setSharedHealth(double health) {
+        if (health < 0 || health > 20) {
+            plugin.getLogger().warning("Invalid health value: " + health + ". Clamping to valid range [0, 20].");
+            health = Math.max(0, Math.min(20, health));
+        }
         plugin.getConfig().set("shared.health", health);
     }
 
     public void setSharedFood(int food) {
+        if (food < 0 || food > 20) {
+            plugin.getLogger().warning("Invalid food value: " + food + ". Clamping to valid range [0, 20].");
+            food = Math.max(0, Math.min(20, food));
+        }
         plugin.getConfig().set("shared.food", food);
     }
 
     public void setSharedExp(float exp) {
+        if (exp < 0 || exp > 1) {
+            plugin.getLogger().warning("Invalid exp value: " + exp + ". Clamping to valid range [0, 1].");
+            exp = Math.max(0, Math.min(1, exp));
+        }
         plugin.getConfig().set("shared.exp", (double) exp);
     }
 
     public void setSharedLevel(int level) {
+        if (level < 0) {
+            plugin.getLogger().warning("Invalid level value: " + level + ". Setting to 0.");
+            level = 0;
+        }
         plugin.getConfig().set("shared.level", level);
     }
 
@@ -108,6 +124,14 @@ public class ConfigurationManager {
 
     public boolean isInventoryShared() {
         return plugin.getConfig().getBoolean("shared.enable-inventory", true);
+    }
+
+    public double getDamageHeartsRatio() {
+        return plugin.getConfig().getDouble("damage.hearts-per-damage", 2.0);
+    }
+
+    public double getMinDamageThreshold() {
+        return plugin.getConfig().getDouble("damage.min-threshold", 0.05);
     }
 
     public String getSharedInventoryId() {
